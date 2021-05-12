@@ -8,7 +8,8 @@ import {
 	LanguageClient,
 	ServerOptions,
 	Executable,
-	State as ClientState
+	State as ClientState,
+	StreamInfo
 } from 'vscode-languageclient/node';
 import * as path from 'path';
 import ShortUniqueId from 'short-unique-id';
@@ -24,6 +25,7 @@ import {
 	sortedWorkspaceFolders
 } from './vscodeUtils';
 import { sleep } from './utils';
+import * as net from 'net';
 
 interface terraformLanguageClient {
 	commandPrefix: string,
@@ -217,6 +219,7 @@ async function startClients(folders = prunedFolderNames()) {
 }
 
 function newClient(cmd: string, location: string, commandPrefix: string) {
+	console.log("new client")
 	const binaryName = cmd.split('/').pop();
 	const channelName = `${binaryName}: ${location}`;
 	const f: vscode.WorkspaceFolder = getWorkspaceFolder(location);
@@ -240,15 +243,21 @@ function newClient(cmd: string, location: string, commandPrefix: string) {
 	const setup = vscode.window.createOutputChannel(channelName);
 	setup.appendLine(`Launching language server: ${cmd} ${serverArgs.join(' ')} for folder: ${location}`);
 
-	const executable: Executable = {
-		command: cmd,
-		args: serverArgs,
-		options: {}
-	};
-	const serverOptions: ServerOptions = {
-		run: executable,
-		debug: executable
-	};
+	let connectionInfo = {
+		port: 30337,
+		host: "127.0.0.1"
+    };
+
+	let serverOptions = () => {
+        // Connect to language server via socket
+        let socket = net.connect(connectionInfo);
+        let result: StreamInfo = {
+            writer: socket,
+            reader: socket
+        };
+        return Promise.resolve(result);
+    };
+
 	const clientOptions: LanguageClientOptions = {
 		documentSelector: [{ scheme: 'file', language: 'terraform', pattern: `${f.uri.fsPath}/**/*` }],
 		workspaceFolder: f,
