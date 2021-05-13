@@ -260,7 +260,8 @@ function newClient(cmd: string, location: string, commandPrefix: string) {
   }
 
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: "file", language: "terraform", pattern: `${f.uri.fsPath}/**/*` }],
+    documentSelector: [{ scheme: "file", language: "terraform", pattern: `${f.uri.fsPath}/**/*` },
+	{ scheme: 'file', language: 'tfvars', pattern: `${f.uri.fsPath}/**/*` }],
     workspaceFolder: f,
     initializationOptions: initializationOptions,
     initializationFailedHandler: (error) => {
